@@ -46,7 +46,8 @@
     (cffi:foreign-free (fd-stream-buffer stream))))
 
 (defclass fd-input-stream (fd-stream
-                           fundamental-character-input-stream)
+                           fundamental-character-input-stream
+                           fundamental-binary-input-stream)
   ((pos
     :initform 0
     :accessor fd-input-stream-pos
@@ -128,8 +129,12 @@
 #+nil (defmethod stream-read-line ((stream fd-input-stream)))
 #+nil (defmethod stream-clear-input ((stream fd-input-stream)))
 
+(defmethod stream-read-byte ((stream fd-input-stream))
+  (%read-char-1byte stream t))
+
 (defclass fd-output-stream (fd-stream
-                            fundamental-character-output-stream)
+                            fundamental-character-output-stream
+                            fundamental-binary-output-stream)
   ((column
     :initform 0
     :accessor fd-output-stream-column
@@ -180,3 +185,9 @@
 #+nil(defmethod stream-force-output ((stream fd-output-stream)))
 #+nil(defmethod stream-clear-output ((stream fd-output-stream)))
 #+nil(defmethod stream-advance-to-column ((stream fd-output-stream) column))
+
+(defmethod stream-write-byte ((stream fd-output-stream) integer)
+  (let ((buffer (fd-stream-buffer stream)))
+    (setf (cffi:mem-aref buffer :unsigned-char 0) integer)
+    (%write (fd-stream-fd stream) buffer 1))
+  integer)
